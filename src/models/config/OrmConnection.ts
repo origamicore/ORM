@@ -24,11 +24,11 @@ export default class OrmConnection
     }
     static createMemorySqlite(context:string):OrmConnection
     {
-        return new OrmConnection({context});
+        return new OrmConnection({context,type:OrmConnectionType.Sqlite});
     }
     static createSqlite(context:string,filePath:string):OrmConnection
     {
-        return new OrmConnection({context,host:filePath});
+        return new OrmConnection({context,host:filePath,type:OrmConnectionType.Sqlite});
     }
     static create(data:{
         type:OrmConnectionType;
