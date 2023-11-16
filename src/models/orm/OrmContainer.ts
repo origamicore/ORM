@@ -1,3 +1,8 @@
+import ForeignKeyModel from "./ForeignKeyModel";
+
+interface Type<T> {
+    new (...args: any[]): T;
+  }
 export class OrmClass
 {  
     name:string;
@@ -10,17 +15,24 @@ export class OrmClass
         Object.assign(this,data);
     }
 }
+
 export class OrmProp
 {
     name:string;
     type:string
+    foreignKey:string|ForeignKeyModel
     primaryKey?:boolean
     autoIncrement?:boolean
+    unique?:boolean|string
+    classType:string
     constructor(data:{
         name:string;
         type:string
+        foreignKey?:string|ForeignKeyModel
         primaryKey?:boolean
         autoIncrement?:boolean
+        unique?:boolean|string
+        classType?:string
     })
     {
         Object.assign(this,data);
@@ -34,16 +46,19 @@ export default class OrmContainer
     {
         return this.models.filter(p=>p.name==name)[0]
     }
-    static addModel(name:string)
+    static addModel<T>(target: Type<T>)
     { 
-        this.models.push(new OrmClass({name,props:this.props}))
+        this.models.push(new OrmClass({name:target.name,props:this.props}))
         this.props=[]
     }
     static addProps(name:string,type:string,other:{
         primaryKey?:boolean
         autoIncrement?:boolean
+        unique?:boolean|string
+        foreignKey?:string|ForeignKeyModel
+        classType:string
     })
     {
-        this.props.push(new OrmProp({name,type,primaryKey:other.primaryKey,autoIncrement:other.autoIncrement}))
+        this.props.push(new OrmProp({name,type,primaryKey:other.primaryKey,autoIncrement:other.autoIncrement,unique:other.unique,foreignKey:other.foreignKey,classType:other.classType}))
     }
 }

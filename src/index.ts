@@ -2,6 +2,7 @@ import {ModuleConfig, OriInjectable, OriService, PackageIndex, ResponseDataModel
 import OrmConfig from './models/config/OrmConfig';
 import SequelizeService from './services/SequelizeService';
 import OrmErrors from './models/orm/Errors';
+import LocalSearchModel from './models/orm/localSearchModel';
 @OriInjectable({domain:'orm'})
 export default class TsOriORM implements PackageIndex
 {
@@ -50,27 +51,27 @@ export default class TsOriORM implements PackageIndex
         }
     }
     @OriService({isInternal:true})
-    async findAll(context:string,table:string):Promise<RouteResponse>
+    async findAll(context:string,table:string,serachModel:LocalSearchModel):Promise<RouteResponse>
     {
         var connection=this.connections.get(context);
         if(connection==null) return OrmErrors.connectionNotFound; 
         try{
-            var data= await connection.findAll(table); 
+            var data= await connection.findAll(table,serachModel); 
             return new RouteResponse({response:new ResponseDataModel({data:data})});
         }catch(exp){
             return OrmErrors.unknownError(exp);
         }
     }
-    // @OriService({isInternal:true})
-    // async insertMany(context:string,collection:string,documents:any):Promise<RouteResponse>
-    // {
-    //     var connection=this.connections.get(context);
-    //     if(connection==null) return OrmErrors.connectionNotFound; 
-    //     try{
-    //         var data= await connection.insertMany(collection,documents); 
-    //         return new RouteResponse({response:new ResponseDataModel({data:data})});
-    //     }catch(exp){
-    //         return OrmErrors.unknownError(exp);
-    //     }
-    // }
+    @OriService({isInternal:true})
+    async insertMany(context:string,table:string,documents:any):Promise<RouteResponse>
+    {
+        var connection=this.connections.get(context);
+        if(connection==null) return OrmErrors.connectionNotFound; 
+        try{
+            var data= await connection.insertMany(table,documents); 
+            return new RouteResponse({response:new ResponseDataModel({data:data})});
+        }catch(exp){
+            return OrmErrors.unknownError(exp);
+        }
+    }
 }

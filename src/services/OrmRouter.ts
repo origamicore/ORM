@@ -1,5 +1,7 @@
-import { MessageModel, OdataResponse, Router } from "@origamicore/core";
-
+import { MessageModel, OdataModel, OdataResponse, Router, SelectModel, SortModel } from "@origamicore/core";
+import MergeService from "./MergeService";
+import LocalSearchModel from "../models/orm/localSearchModel";
+import OrmContainer from "../models/orm/OrmContainer";
 export default class OrmRouter<T>
 {
     context:string;
@@ -31,11 +33,74 @@ export default class OrmRouter<T>
     {
         return JSON.parse(JSON.stringify(data));
     }
-    async findAll():Promise<OdataResponse<T>>
-    { 
+    async findById(id:any):Promise<T>
+    {
+        let omodel= OrmContainer.models.filter(p=>p.name==this.modelName)[0]
+        let idField='id';
+        if(omodel)
+        {
+            for(let prop of omodel.props)
+            {
+                if(prop.primaryKey)
+                {
+                    idField=prop.name;
+                }
+            }
+        }
+        let where:any={};
+        if(id)
+        {
+            where[idField] = id
+        }
+        else
+        { 
+            where[idField] = {$eq:id}
+        }
+         
         var data= await Router.runInternal('orm','findAll',new MessageModel({data:{
             context:this.context,
             table:this.table,
+            serachModel:new LocalSearchModel({
+                where:MergeService.mergeWhere(where,null)
+            })  
+        }}))
+        if(data.response)
+        {
+            let rsep= data.response.data;
+            if(rsep.value[0])
+            {
+                return new this.cls(rsep.value[0])
+            }
+            return null
+        }
+        throw data.error.message; 
+
+    }
+    async findAll(
+        fields?: {
+            where?: any
+            select?: (string|SelectModel)[],
+            sort?:SortModel[]
+            limit?:number
+            skip?:number
+            showCount?:boolean
+        },odata?:OdataModel
+
+    ):Promise<OdataResponse<T>>
+    {  
+        let mselect=MergeService.mergeSelect(fields?.select,odata?.$filter)
+        var data= await Router.runInternal('orm','findAll',new MessageModel({data:{
+            context:this.context,
+            table:this.table,
+            serachModel:new LocalSearchModel({
+                where:MergeService.mergeWhere(fields?.where,odata?.$filter),
+                select:mselect.select,
+                selectGroup:mselect.selectGroup,
+                top:MergeService.mergeTop(fields?.limit,odata?.$top),
+                skip:MergeService.mergeTop(fields?.skip,odata?.$skip),
+                orders:MergeService.mergeOrder(fields?.sort,odata?.$orderby),
+                count: (fields?.showCount || !!odata?.$count), 
+            })  
         }}))
         if(data.response)
         {
