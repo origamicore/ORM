@@ -51,6 +51,42 @@ export default class TsOriORM implements PackageIndex
         }
     }
     @OriService({isInternal:true})
+    async saveById(context:string,table:string,document:any,condition:any):Promise<RouteResponse>
+    {
+        var connection=this.connections.get(context);
+        if(connection==null) return OrmErrors.connectionNotFound; 
+        try{
+            var data= await connection.saveById(table,document,condition); 
+            return new RouteResponse({response:new ResponseDataModel({data:data})});
+        }catch(exp){
+            return OrmErrors.unknownError(exp);
+        }
+    }
+    @OriService({isInternal:true})
+    async deleteOne(context:string,table:string,condition:any):Promise<RouteResponse>
+    {
+        var connection=this.connections.get(context);
+        if(connection==null) return OrmErrors.connectionNotFound; 
+        try{
+            var data= await connection.deleteOne(table,condition); 
+            return new RouteResponse({response:new ResponseDataModel({data:data})});
+        }catch(exp){
+            return OrmErrors.unknownError(exp);
+        }
+    }
+    @OriService({isInternal:true})
+    async deleteMany(context:string,table:string,condition:any):Promise<RouteResponse>
+    {
+        var connection=this.connections.get(context);
+        if(connection==null) return OrmErrors.connectionNotFound; 
+        try{
+            var data= await connection.deleteMany(table,condition); 
+            return new RouteResponse({response:new ResponseDataModel({data:data})});
+        }catch(exp){
+            return OrmErrors.unknownError(exp);
+        }
+    }
+    @OriService({isInternal:true})
     async findAll(context:string,table:string,serachModel:LocalSearchModel):Promise<RouteResponse>
     {
         var connection=this.connections.get(context);

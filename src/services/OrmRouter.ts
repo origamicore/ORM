@@ -1,7 +1,7 @@
 import { MessageModel, OdataModel, OdataResponse, Router, SelectModel, SortModel } from "@origamicore/core";
 import MergeService from "./MergeService";
 import LocalSearchModel from "../models/orm/localSearchModel";
-import OrmContainer from "../models/orm/OrmContainer";
+import OrmContainer, { OrmClass } from "../models/orm/OrmContainer";
 export default class OrmRouter<T>
 {
     context:string;
@@ -32,6 +32,47 @@ export default class OrmRouter<T>
     copy(data:any)
     {
         return JSON.parse(JSON.stringify(data));
+    }
+    getId( )
+    {
+        let omodel= OrmContainer.models.filter(p=>p.name==this.modelName)[0]
+        let idField='_id';
+        if(omodel)
+        {
+            for(let prop of omodel.props)
+            {
+                if(prop.primaryKey)
+                {
+                    idField=prop.name;
+                }
+            }
+        }
+        return idField;
+    }
+    async saveById(document:T):Promise<any>
+    {
+        let idField= this.getId( )
+        let condition:any={};
+        let id=document[idField]
+        if(id)
+        {
+            condition[idField] = id
+        }
+        else
+        { 
+            condition[idField] = {$eq:id}
+        }
+        var copy=this.copy(document);
+         
+        var copy= this.copy(document);
+        var data= await Router.runInternal('orm','saveById',new MessageModel({data:{
+            context:this.context,
+            table:this.table,
+            document:copy, 
+            condition
+         }}))
+         return  data.response.data ; 
+
     }
     async findById(id:any):Promise<T>
     {
@@ -121,6 +162,65 @@ export default class OrmRouter<T>
             context:this.context,
             table:this.table,
             document:copy, 
+        }}))
+        if(data.response)
+        {
+            return data.response.data; 
+
+        }
+        console.log(data.error.message);
+        
+        throw data.error.message; 
+    }
+    async DeleteOne(condition:any):Promise<any>
+    {  
+        var data= await Router.runInternal('orm','deleteOne',new MessageModel({data:{
+            context:this.context,
+            table:this.table,
+            condition:MergeService.mergeWhere(condition,null), 
+        }}))
+        if(data.response)
+        {
+            return data.response.data; 
+
+        }
+        console.log(data.error.message);
+        
+        throw data.error.message; 
+    }
+    async DeleteMany(condition:any):Promise<any>
+    {  
+        var data= await Router.runInternal('orm','deleteMany',new MessageModel({data:{
+            context:this.context,
+            table:this.table,
+            condition:MergeService.mergeWhere(condition,null), 
+        }}))
+        if(data.response)
+        {
+            return data.response.data; 
+
+        }
+        console.log(data.error.message);
+        
+        throw data.error.message; 
+    }
+    async findByIdAndDelete(id:any):Promise<any>
+    { 
+        let idField= this.getId( )
+        let where:any={};
+        if(id)
+        {
+            where[idField] = id
+        }
+        else
+        { 
+            where[idField] = {$eq:id}
+        }
+
+        var data= await Router.runInternal('orm','deleteOne',new MessageModel({data:{
+            context:this.context,
+            table:this.table,
+            condition:MergeService.mergeWhere(where,null), 
         }}))
         if(data.response)
         {

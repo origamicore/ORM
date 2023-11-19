@@ -3,6 +3,7 @@ import { DataTypes } from "sequelize";
 import OrmContainer from "./OrmContainer";
 import OrmCommon from "../OrmCommon";
 import ForeignKeyModel from "./ForeignKeyModel";
+import ChildModel from "./ChildModel";
 let types=['Boolean','Date','String','','',];
 interface Type<T> {
     new (...args: any[]): T;
@@ -23,10 +24,12 @@ export function OrmProps(fields?: {
     autoIncrement?:boolean
     unique?:boolean|string
     foreignKey?:string|ForeignKeyModel
+    children?:ChildModel
     type?:'BIGINT'|'BOOLEAN'|'CHAR'|'DECIMAL'|'DOUBLE'|'FLOAT'|'INTEGER'|'JSON'|'NOW'|'TEXT'|'UUID'|'DATE'
   })
 {
     return function(target: Object, propertyKey: string) { 
+      OrmContainer.target=target;
         var t = Reflect.getMetadata("design:type", target, propertyKey); 
         console.log('>>>',t.name,fields?.type);
         let type=fields?.type;
@@ -43,6 +46,49 @@ export function OrmProps(fields?: {
         {
           type='INTEGER'
         }
+        if(fields?.children)
+        {
+          if(   !fields?.children.col)
+          {
+            if(t.name=='Array')
+            {
+              throw 'Enter the col'
+            }
+            else
+            {
+              fields.children.col='_id'
+            }
+          }
+          let colName=  fields.children.col 
+          // let childModel=OrmContainer.getModel(fields.children.type.name);
+          // if(childModel)
+          // {
+          //   Object.defineProperty(target, colName, {
+          //       get: function() {
+          //         return  this['@'+colName];
+          //     },
+          //       set: function(newVal: any) {    
+            
+          //         this['@'+colName] = newVal;    
+          //       }
+          //   });
+
+          // }
+          const getter = function() {
+            console.log('----------------------------------------------------------------');
+              return  this['@'+propertyKey];
+          };
+          const setter = function(newVal: any) {    
+            console.log('----------------------------------------------------------------',newVal);
+            
+            this['@'+propertyKey] = newVal;    
+          }; 
+          Object.defineProperty(target, propertyKey, {
+              get: getter,
+              set: setter
+          });
+
+        }
         if(fields?.foreignKey)
         {
           let colName=typeof(fields.foreignKey)=='string' ? fields.foreignKey:fields.foreignKey.col
@@ -50,15 +96,17 @@ export function OrmProps(fields?: {
               return  this['@'+propertyKey];
           };
           const setter = function(newVal: any) {   
-            this[colName]=newVal._id
-            console.log('---------------------', this[colName]);
+            this[colName]=newVal?._id 
             
             this['@'+propertyKey] = newVal;    
           }; 
           Object.defineProperty(target, propertyKey, {
               get: getter,
               set: setter
-          }); 
+          });
+        }
+        if(fields?.foreignKey || fields?.children)
+        { 
           target['toJSON']=function(){
             var copy:any={};
             for(let prop in this)
@@ -84,14 +132,15 @@ export function OrmProps(fields?: {
                 copy[prop.name]=this['@'+prop.name]; 
             } 
             return  copy;
-          }
+          } 
         }
         OrmContainer.addProps((fields?.name)??propertyKey,type,{
           foreignKey:fields?.foreignKey,
           unique:fields?.unique,
           primaryKey:fields?.primaryKey,
           autoIncrement:fields?.autoIncrement,
-          classType:t.name
+          classType:t.name,
+          children:fields?.children
         })
     }
 

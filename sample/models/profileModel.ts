@@ -1,6 +1,10 @@
 import { OriProps,IOriModel, OriModel } from "@origamicore/core"; 
 import { OrmModel, OrmProps } from "../..";
 import CountryModel from "./CountryModel";
+import PhoneNumber from "./PhoneNumber";
+import ForeignKeyModel from "../../src/models/orm/ForeignKeyModel";
+import ChildModel from "../../src/models/orm/ChildModel";
+import AddressModel from "./AddressModel";
 @OrmModel()
 @OriModel({})
 export default class ProfileModel extends IOriModel
@@ -25,6 +29,17 @@ export default class ProfileModel extends IOriModel
     @OrmProps({foreignKey:'countryId'})
     country:CountryModel;
 
+    @OrmProps({children:new ChildModel({
+        col:'profileId',
+        table:'phoneNumbers', 
+    })})
+    phones:PhoneNumber[];
+
+    @OrmProps({children:new ChildModel({ 
+        table:'address', 
+    })})
+    address:AddressModel;
+
     constructor(
         fields?: {
             _id?:string
@@ -32,6 +47,8 @@ export default class ProfileModel extends IOriModel
             lastName?: string
             age?:number 
             country?:CountryModel;
+            phones?:PhoneNumber[]
+            address?:AddressModel;
         })
     {
         super();  

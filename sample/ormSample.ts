@@ -3,7 +3,13 @@ import OrigamiCore, { ConfigModel } from "@origamicore/core";
 import ProfileModel from "./models/profileModel";
 import DbSchema from "./services/dbSchema";
 import CountryModel from "./models/CountryModel";
+import PhoneNumber from "./models/PhoneNumber";
+import AddressModel from "./models/AddressModel";
 
+function log(data:any)
+{
+    console.log(JSON.stringify(data,null,4)) 
+}
 export default class Sample
 {
     constructor()
@@ -38,11 +44,15 @@ export default class Sample
             age:11,
             firstName:"vahid1",
             lastName:'hossaini1',
-            country:new CountryModel({_id:1,name:"Iran"})
+            country:new CountryModel({_id:1,name:"Iran"}),
+            phones:[
+                new PhoneNumber({phone:'+98',type:'Home'})
+            ],
+            address:new AddressModel({adress:'Tehran'})
             // countryId:1
+
         })
-        console.log('>>>>>findById',JSON.stringify(profile,null,4) );
-        res= await DbSchema.profile.InsertOne(profile)
+        
         res= await DbSchema.profile.InsertOne(new ProfileModel({
             _id:"2",
             age:12,
@@ -65,9 +75,36 @@ export default class Sample
                 }),
             ]
         )
-        console.log('>>>>>',res);
+         res= await DbSchema.profile.InsertOne(profile)
+       // res= await DbSchema.profile.saveById(profile)
+        res= await DbSchema.phoneNumbers.findAll({})
         res= await DbSchema.profile.findAll({where:{_id:{$eq:'1'}}})
-        console.log('>>>>>findById',JSON.stringify(res,null,4) );
+        profile= await DbSchema.profile.findById(profile._id)
+        profile.age=123
+        profile.phones[0].type='Work'
+        profile.phones.push(new PhoneNumber({phone:'+01',type:'None'})) 
+        profile.phones.splice(0,1)
+        //delete profile['@address'] ;
+        profile.address=null;
+        await DbSchema.profile.saveById(profile)
+        res= await DbSchema.profile.findById(profile._id)
+        res= await DbSchema.phoneNumbers.findAll({})
+        log(res);
+        // return
+        res= await DbSchema.profile.DeleteOne({ _id:{$eq:'1' }})
+        res= await DbSchema.phoneNumbers.findAll({})
+        res= await DbSchema.profile.findAll({where:{_id:{$eq:'1'}}})
+        //console.log('>>>>>findById',JSON.stringify(profile,null,4) );
+        // console.log('>>>>>',res);
+        res= await DbSchema.profile.findAll({where:{_id:{$eq:'4'}}})
+        log(res);
+        res= await DbSchema.profile.DeleteOne({ _id:{$eq:'4' }})
+        log(res); 
+        res= await DbSchema.profile.findAll({where:{_id:{$eq:'4'}}})
+        log(res);
+        res= await DbSchema.countrie.findAll({ })
+        log(res); 
+        let a=0;
     //     res= await DbSchema.profile.findById('3')
     //     console.log('>>>>>findById',res);
     //    res= await DbSchema.profile.findById('')
