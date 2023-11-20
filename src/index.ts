@@ -51,6 +51,30 @@ export default class TsOriORM implements PackageIndex
         }
     }
     @OriService({isInternal:true})
+    async updateOne(context:string,table:string,condition:any,set?:any,inc?:any,push?:any):Promise<RouteResponse>
+    {
+        var connection=this.connections.get(context);
+        if(connection==null) return OrmErrors.connectionNotFound; 
+        try{
+            var data= await connection.updateOne(table,condition,set,inc,push); 
+            return new RouteResponse({response:new ResponseDataModel({data:data})});
+        }catch(exp){
+            return OrmErrors.unknownError(exp);
+        }
+    }
+    @OriService({isInternal:true})
+    async updateMany(context:string,table:string,condition:any,set?:any,inc?:any):Promise<RouteResponse>
+    {
+        var connection=this.connections.get(context);
+        if(connection==null) return OrmErrors.connectionNotFound; 
+        try{
+            var data= await connection.updateMany(table,condition,set,inc); 
+            return new RouteResponse({response:new ResponseDataModel({data:data})});
+        }catch(exp){
+            return OrmErrors.unknownError(exp);
+        }
+    }
+    @OriService({isInternal:true})
     async saveById(context:string,table:string,document:any,condition:any):Promise<RouteResponse>
     {
         var connection=this.connections.get(context);

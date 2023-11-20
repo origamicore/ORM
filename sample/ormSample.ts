@@ -79,7 +79,23 @@ export default class Sample
        // res= await DbSchema.profile.saveById(profile)
         res= await DbSchema.phoneNumbers.findAll({})
         res= await DbSchema.profile.findAll({where:{_id:{$eq:'1'}}})
+        await DbSchema.profile.UpdateOne({_id:'1'},{
+            inc:{age:22},
+            set:{firstName:'test update'},
+            push:{
+                phones:[
+                    new PhoneNumber({phone:'+02',type:'Home'})
+                ]
+            }
+        })
         profile= await DbSchema.profile.findById(profile._id)
+        await DbSchema.profile.UpdateMany({$or:[{_id:'2'},{_id:'3'}]},{
+            
+            set:{firstName:'test update many'},
+            inc:{age:12},
+        })
+        profile= await DbSchema.profile.findById('2')
+        profile= await DbSchema.profile.findById('3')
         profile.age=123
         profile.phones[0].type='Work'
         profile.phones.push(new PhoneNumber({phone:'+01',type:'None'})) 

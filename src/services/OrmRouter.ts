@@ -172,6 +172,42 @@ export default class OrmRouter<T>
         
         throw data.error.message; 
     }
+    async UpdateOne(condition:any,
+        fields?: {
+            set?:any,
+            inc?:any,
+            push?:any
+        }
+        ):Promise<any>
+    { 
+        
+       var data= await Router.runInternal('orm','updateOne',new MessageModel({data:{
+            context:this.context,
+            table:this.table,
+             condition:MergeService.mergeWhere(condition,null),
+             set:fields?.set?this.copy(fields.set):null,
+             inc:fields?.inc,
+             push:fields?.push
+        }}))
+        return data.response.data; 
+    }
+    async UpdateMany(condition:any,
+        fields?: {
+            set?:any,
+            inc?:any, 
+        }
+        ):Promise<any>
+    { 
+        
+       var data= await Router.runInternal('orm','updateMany',new MessageModel({data:{
+            context:this.context,
+            table:this.table,
+             condition:MergeService.mergeWhere(condition,null),
+             set:fields?.set?this.copy(fields.set):null,
+             inc:fields?.inc, 
+        }}))
+        return data.response.data; 
+    }
     async DeleteOne(condition:any):Promise<any>
     {  
         var data= await Router.runInternal('orm','deleteOne',new MessageModel({data:{

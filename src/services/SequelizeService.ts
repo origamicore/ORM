@@ -377,6 +377,109 @@ export default class SequelizeService
         //const users = await testmodel.findAll();
  
     }
+    async updateMany(table:string,condition:any,set?:any,inc?:any):Promise<any>
+    {
+
+        let tb= this.tables.get(table)
+        if(tb)
+        {
+            if(inc || set)
+            {
+                
+                let transaction = await this.sequelize.transaction(); 
+                try{
+    
+                    let promiseArr=[]
+                    if(inc)
+                        promiseArr.push(tb.increment(inc,{transaction,where:condition}) )
+                    if(set)
+                        promiseArr.push(tb.update(set,{transaction,where:condition}) ) 
+                    await Promise.all(promiseArr)
+                    await transaction.commit();
+    
+                }catch(exp){
+                    await transaction.rollback();
+                } 
+            }
+        }
+
+    }
+    async updateOne(table:string,condition:any,set?:any,inc?:any,push?:any):Promise<any>
+    {  
+        let tb= this.tables.get(table)
+        if(tb)
+        {
+            let obj=await tb.findOne({where:condition})
+            if(!obj)
+            {
+                throw 'Item not found'
+            }
+            let actions:ActionModel[]=[]
+            if(set )
+            {
+                Object.assign(obj,set)
+                actions.push(new ActionModel({action:ActionType.Update,model:obj}))
+            }
+            if(inc)
+            {
+                actions.push(new ActionModel({action:ActionType.Inc,model:obj,data:inc})) 
+            }
+            if(push)
+            {
+                let id= this.getId(table)
+                let model=this.tablesClass.get(table);
+                for(let filed in push)
+                {
+                    let prop= model.props.filter(p=>p.name==filed)[0];
+                    if(prop.children && prop.classType == 'Array' )
+                    {
+                        let tb= this.tables.get(prop.children.table)
+                        let include=this.findInclude(table)
+                        let arr=push[filed];
+                        for(let row of arr)
+                        {
+                            row[prop.children.col]=obj[id]
+                            actions.push(new ActionModel({action:ActionType.Create,model:tb,data:row,include})) 
+
+                        }
+                    }
+                }
+            }
+            if(actions.length)
+            {
+                let transaction = await this.sequelize.transaction();
+                try{
+    
+                     
+                    let promiseArr=[]
+                    for(let action of actions)
+                    {
+                        if(action.action==ActionType.Create)
+                        {
+                            promiseArr.push(action.model.create(action.data,{include:action.include,transaction}) ) 
+                        }
+                        if(action.action==ActionType.Inc)
+                        {
+                            promiseArr.push(action.model.increment(action.data,{transaction}))  
+                        }
+                        if(action.action==ActionType.Update)
+                        {
+                            promiseArr.push(action.model.save({transaction}) ) 
+                        }
+                    }
+                    await Promise.all(promiseArr)
+                    await transaction.commit();
+    
+                }catch(exp){
+                    await transaction.rollback();
+                } 
+
+            }
+        }
+        return null
+        //const users = await testmodel.findAll();
+ 
+    }
     async deleteOne(table:string,condition:any):Promise<any>
     {  
         let tb= this.tables.get(table)

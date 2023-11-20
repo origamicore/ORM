@@ -2,7 +2,8 @@ export enum ActionType
 {
     Delete=1,
     Create=2,
-    Update=3
+    Update=3,
+    Inc=4
 }
 export default class ActionModel
 {
