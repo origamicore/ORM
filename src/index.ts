@@ -26,6 +26,18 @@ export default class TsOriORM implements PackageIndex
     }
     
     @OriService({isInternal:true})
+    async syncDatabase(context:string):Promise<RouteResponse>
+    {
+        var connection=this.connections.get(context);
+        if(connection==null) return OrmErrors.connectionNotFound; 
+        try{
+            var data= await connection.syncDatabase(); 
+            return new RouteResponse({response:new ResponseDataModel({data:data})});
+        }catch(exp){
+            return OrmErrors.unknownError(exp);
+        }
+    }
+    @OriService({isInternal:true})
     async initSchema(context:string,table:string,name:string):Promise<RouteResponse>
     {
         var connection=this.connections.get(context);

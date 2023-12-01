@@ -91,12 +91,14 @@ export function OrmProps(fields?: {
         }
         if(fields?.foreignKey)
         {
+          let foreignModel = OrmContainer.getModel(t.name);
+          let keyProp= foreignModel.getKey()
           let colName=typeof(fields.foreignKey)=='string' ? fields.foreignKey:fields.foreignKey.col
           const getter = function() {
               return  this['@'+propertyKey];
           };
           const setter = function(newVal: any) {   
-            this[colName]=newVal?._id 
+            if(newVal)this[colName]=newVal[keyProp.name]; 
             
             this['@'+propertyKey] = newVal;    
           }; 
@@ -129,6 +131,7 @@ export function OrmProps(fields?: {
             let ormModels=OrmContainer.getModel(this.constructor.name)
             for(let prop of ormModels.props)
             {  
+              if(prop.foreignKey || prop.children)
                 copy[prop.name]=this['@'+prop.name]; 
             } 
             return  copy;

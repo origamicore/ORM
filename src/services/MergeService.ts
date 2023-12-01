@@ -1,4 +1,5 @@
 import { SelectModel, SortModel } from "@origamicore/core";
+import { Sequelize } from "sequelize";
 const { Op } = require("sequelize");
 var parser = require('odata-v4-parser');
 export default class MergeService
@@ -174,6 +175,7 @@ export default class MergeService
     static objectToWhere(obj)
     {
         if( typeof(obj)!='object') return;
+        
         if(obj.$in){
             obj[a][Op.in]=obj[a].$in
             delete obj[a].$in 
@@ -181,16 +183,34 @@ export default class MergeService
         }
         for(var a in obj)
         {  
-            
             if(obj[a] )
             {
                 let keys=Object.keys(obj[a])
-                if(keys.indexOf('$eq')>-1)
+                if(a.indexOf('.')>-1)
+                { 
+                    let val='';
+                    if(typeof(obj[a])=='boolean' || typeof(obj[a])=='number'|| typeof(obj[a])=='string')
+                    {
+                        obj[Op.and]=[
+                            Sequelize.literal(a+' = ' + JSON.stringify(obj[a]) )
+                        ]
+                        delete obj[a] 
+                    }
+                    else
+                    {
+                        throw 'Not Supported '
+                    }
+                    
+                }
+                else
                 {
-                    obj[a][Op.eq]=obj[a].$eq
-                    delete obj[a].$eq
 
-                } 
+                    if(keys.indexOf('$eq')>-1)
+                    {
+                        obj[a][Op.eq]=obj[a].$eq
+                        delete obj[a].$eq
+                    } 
+                }
             }
 
 

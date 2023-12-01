@@ -15,6 +15,14 @@ export default class OrmRouter<T>
         await instance.create()
         return instance;
     }
+    static async syncDatabase(context:string)
+    {
+        var data= await Router.runInternal('orm','syncDatabase',new MessageModel({data:{
+            context:context, 
+        }}))
+        return data.response.data;  
+
+    }
     constructor(context:string,table:string,cls: { new(data:any): T }){
         this.context=context;
         this.table=table;

@@ -6,7 +6,5 @@ OrigamiORM requires [OrigamiCore](https://www.npmjs.com/package/@origamicore/cor
 npm install @origamicore/core
 npm install @origamicore/orm
 ```
-
-## Samples
-[Run Express And Socket](https://github.com/origamicore/ORM/tree/main/sample)
+ 
 

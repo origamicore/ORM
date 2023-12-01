@@ -7,6 +7,7 @@ import OrmCommon from "../models/OrmCommon";
 import LocalSearchModel from "../models/orm/localSearchModel"; 
 import RelationModel from "../models/orm/RelationModel";
 import ActionModel, { ActionType } from "../models/orm/ActionModel";
+import ForeignKeyModel from "../models/orm/ForeignKeyModel";
 const { Sequelize } = require('sequelize');
 class CountryModel 
 { 
@@ -104,24 +105,42 @@ export default class SequelizeService
             }    
         return temp;
     }
-    findInclude(table:string,search:boolean=false)
+    findInclude(table:string,search:boolean=false,select:string[]=[])
     {
         if(search)
         {
             let include= this.includesForSearch.get(table)
-            if(include)return include;
-            this.includesForSearch.set(table,this.getInclude(table,true))
-            return this.includesForSearch.get(table) 
+            if(!include)
+            {
+                this.includesForSearch.set(table,this.getInclude(table,true,[])) 
+                include = this.includesForSearch.get(table) 
+            }
+            if(select.length)
+            {
+                let a=0;
+                let arr=[];
+                for(let inc of include)
+                {
+                    let index=select.indexOf(inc.as)
+                    if(index>-1)
+                    {
+                        arr.push(inc)
+                        select.splice(index,1)
+                    }
+                }
+                return arr;
+            }
+            return include;
         }
         else
         {
             let include= this.includes.get(table)
             if(include)return include;
-            this.includes.set(table,this.getInclude(table))
+            this.includes.set(table,this.getInclude(table,false,[]))
             return this.includes.get(table) 
         }
     }
-    getInclude(table:string,all:boolean=false )
+    getInclude(table:string,all:boolean,ignore:string[] )
     {
         let include:any[]=[]
         let relations = this.relations.filter(p=>p.table1==table && (p.isChild|| all));
@@ -129,8 +148,12 @@ export default class SequelizeService
         {
             for(let relation of relations)
             {
-                if(!relation.relation1)throw ''
-                let subInclude= this.getInclude(relation.table2)
+                if(ignore.indexOf(relation.title)>-1)
+                {
+                    continue
+                }
+                if(!relation.relation1)throw ''  
+                let subInclude= this.getInclude(relation.table2,all,relation.ignore)
                 if(subInclude.length)
                 {
                     include.push({
@@ -201,7 +224,7 @@ export default class SequelizeService
             }
             if(!find.attributes.length)delete find.attributes 
             
-            let include=this.findInclude(table,true)
+            let include=this.findInclude(table,true,option.select)
             if(include.length)
             {
                 find.include=include
@@ -214,7 +237,7 @@ export default class SequelizeService
                 rows = dt.rows;
             }
             else
-            {
+            { 
                 rows=await tb.findAll(find)
             }
             for(let row of rows)
@@ -511,7 +534,8 @@ export default class SequelizeService
         let tb= this.tables.get(table)
         if(tb)
         {
-            let obj=await tb.bulkCreate(data)
+            let include=this.findInclude(table)
+            let obj=await tb.bulkCreate(data,{include})
             return  obj 
         }
         return null
@@ -548,7 +572,7 @@ export default class SequelizeService
                     foreignKey:'userxid'
                 });
 
-            await this.sequelize.sync({ force: true });
+            // await this.sequelize.sync({ force: true });
            let x=await Product.create({
                 title: 'Chair',
                 user: {
@@ -577,6 +601,10 @@ export default class SequelizeService
               let json = JSON.stringify(rows[0].dataValues,null,4)
               console.log(json)
               let aa=0;
+    }
+    async syncDatabase()
+    {
+        await this.sequelize.sync({ force: true });
     }
     async initSchema(table:string,name:string)
     {
@@ -631,13 +659,16 @@ export default class SequelizeService
                         key=oprop.foreignKey.col
                         table2=oprop.foreignKey.table;
                     }
+                    let ignore =[]
+                    if(typeof(oprop.foreignKey)!='string')ignore=(oprop.foreignKey as ForeignKeyModel).ignore
                         this.relations.push(new RelationModel({
                             table1:table,
                             table2,
                             init:false,
                             key,
                             title:oprop.name,
-                            model
+                            model,
+                            ignore
                         }))
                     // modelStructure[prop.name]={
                     //     type: DataTypes.INTEGER,
@@ -714,13 +745,16 @@ export default class SequelizeService
                         key=oprop.foreignKey.col
                         table2=oprop.foreignKey.table;
                     }
+                    let ignore =[]
+                    if(typeof(oprop.foreignKey)!='string')ignore=(oprop.foreignKey as ForeignKeyModel).ignore
                     this.relations.push(new RelationModel({
                         table1:table,
                         table2,
                         init:false,
                         key,
                         title:oprop.name,
-                        model
+                        model,
+                        ignore
                     })) 
                 }
                 else
@@ -775,7 +809,8 @@ export default class SequelizeService
                 }
                 else
                 {
-                    table2 = this.tables.get(this.types.get(relation.model))
+                    relation.table2=this.types.get(relation.model)
+                    table2 = this.tables.get(relation.table2)
                 }
                 if(table2 && table1)
                 {     
@@ -818,6 +853,5 @@ export default class SequelizeService
 
             }  
         }
-        await this.sequelize.sync({ force: true });
     }
 }

@@ -10,6 +10,7 @@ export default class RelationModel
     init:boolean;
     isChild:boolean;
     sync:boolean=false
+    ignore:string[]=[]
     public constructor(
         fields?: {
             table1:string;
@@ -20,6 +21,7 @@ export default class RelationModel
             model?:string
             isChild?:boolean;
             sync?:boolean
+            ignore?:string[]
         }) {
         if (fields) Object.assign(this, fields);
     }

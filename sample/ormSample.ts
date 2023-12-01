@@ -46,7 +46,8 @@ export default class Sample
             lastName:'hossaini1',
             country:new CountryModel({_id:1,name:"Iran"}),
             phones:[
-                new PhoneNumber({phone:'+98',type:'Home'})
+                new PhoneNumber({phone:'+98',type:'Home'}),
+                new PhoneNumber({phone:'+22',type:'Home'}),
             ],
             address:new AddressModel({adress:'Tehran'})
             // countryId:1
@@ -77,6 +78,16 @@ export default class Sample
         )
          res= await DbSchema.profile.InsertOne(profile)
        // res= await DbSchema.profile.saveById(profile)
+        res= await DbSchema.profile.findAll({ where:{_id:'1'}})
+        res= await DbSchema.profile.findAll({select:['_id','firstName','lastName','country'],where:{_id:'1'}})
+        res= await DbSchema.profile.findAll({where:{
+            $or:[
+                {'phones.phone':'+98'},
+                {_id:'4'}
+            ]
+            //SELECT `ProfileModel`.`_id`, `ProfileModel`.`firstName`, `ProfileModel`.`lastName`, `ProfileModel`.`country`, `country`.`_id` AS `country._id`, `country`.`name` AS `country.name` FROM `profile` AS `ProfileModel` LEFT OUTER JOIN `country` AS `country` ON `ProfileModel`.`countryId` = `country`.`_id` WHERE `ProfileModel`.`_id` = '1'
+            //SELECT `ProfileModel`.`_id`, `ProfileModel`.`firstName`, `ProfileModel`.`lastName`, `ProfileModel`.`country`, `country`.`_id` AS `country._id`, `country`.`name` AS `country.name` FROM `profile` AS `ProfileModel` LEFT OUTER JOIN `country` AS `country` ON `ProfileModel`.`countryId` = `country`.`_id` WHERE `ProfileModel`.`_id` = '1';
+        }})
         res= await DbSchema.phoneNumbers.findAll({})
         res= await DbSchema.profile.findAll({where:{_id:{$eq:'1'}}})
         await DbSchema.profile.UpdateOne({_id:'1'},{

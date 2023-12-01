@@ -16,5 +16,6 @@ export default class DbSchema
         this.profile=await OrmRouter.create(context,'profile',ProfileModel)
         this.phoneNumbers=await OrmRouter.create(context,'phoneNumbers',PhoneNumber)
         this.address=await OrmRouter.create(context,'address',AddressModel)
+        await OrmRouter.syncDatabase(context)
     }
 }
