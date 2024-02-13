@@ -176,15 +176,15 @@ export default class MergeService
     {
         if( typeof(obj)!='object') return;
         
-        if(obj.$in){
-            obj[a][Op.in]=obj[a].$in
-            delete obj[a].$in 
-            return
-        }
         for(var a in obj)
         {  
             if(obj[a] )
             {
+                if(obj[a].$in){
+                    obj[a][Op.in]=obj[a].$in
+                    delete obj[a].$in 
+                    return
+                }
                 let keys=Object.keys(obj[a])
                 if(a.indexOf('.')>-1)
                 { 

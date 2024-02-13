@@ -49,16 +49,19 @@ export default class Sample
                 new PhoneNumber({phone:'+98',type:'Home'}),
                 new PhoneNumber({phone:'+22',type:'Home'}),
             ],
-            address:new AddressModel({adress:'Tehran'})
+            address:new AddressModel({adress:'Tehran'}), 
             // countryId:1
 
         })
         
+         res= await DbSchema.profile.InsertOne(profile)
         res= await DbSchema.profile.InsertOne(new ProfileModel({
             _id:"2",
             age:12,
             firstName:"vahid2",
-            lastName:'hossaini2'
+            lastName:'hossaini2',
+            representative:profile
+
         }))
         res= await DbSchema.profile.InsertMany(
             [
@@ -76,9 +79,8 @@ export default class Sample
                 }),
             ]
         )
-         res= await DbSchema.profile.InsertOne(profile)
        // res= await DbSchema.profile.saveById(profile)
-        res= await DbSchema.profile.findAll({ where:{_id:'1'}})
+        res= await DbSchema.profile.findAll({ where:{_id:'2'}})
         res= await DbSchema.profile.findAll({select:['_id','firstName','lastName','country'],where:{_id:'1'}})
         res= await DbSchema.profile.findAll({where:{
             $or:[

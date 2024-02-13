@@ -11,6 +11,8 @@ export default class RelationModel
     isChild:boolean;
     sync:boolean=false
     ignore:string[]=[]
+    treeName:string;
+    deep:number;
     public constructor(
         fields?: {
             table1:string;
@@ -22,6 +24,8 @@ export default class RelationModel
             isChild?:boolean;
             sync?:boolean
             ignore?:string[]
+            treeName?:string;
+            deep?:number;
         }) {
         if (fields) Object.assign(this, fields);
     }

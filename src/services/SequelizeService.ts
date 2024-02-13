@@ -106,13 +106,15 @@ export default class SequelizeService
         return temp;
     }
     findInclude(table:string,search:boolean=false,select:string[]=[])
-    {
+    { 
         if(search)
         {
             let include= this.includesForSearch.get(table)
+            
             if(!include)
             {
-                this.includesForSearch.set(table,this.getInclude(table,true,[])) 
+                let sub=this.getInclude(table,true,[],{})
+                this.includesForSearch.set(table,sub) 
                 include = this.includesForSearch.get(table) 
             }
             if(select.length)
@@ -136,11 +138,11 @@ export default class SequelizeService
         {
             let include= this.includes.get(table)
             if(include)return include;
-            this.includes.set(table,this.getInclude(table,false,[]))
+            this.includes.set(table,this.getInclude(table,false,[],{}))
             return this.includes.get(table) 
         }
     }
-    getInclude(table:string,all:boolean,ignore:string[] )
+    getInclude(table:string,all:boolean,ignore:string[],treeData:any )
     {
         let include:any[]=[]
         let relations = this.relations.filter(p=>p.table1==table && (p.isChild|| all));
@@ -153,7 +155,21 @@ export default class SequelizeService
                     continue
                 }
                 if(!relation.relation1)throw ''  
-                let subInclude= this.getInclude(relation.table2,all,relation.ignore)
+                if(relation.treeName)
+                {
+                    if(!treeData[relation.treeName])treeData[relation.treeName]=relation.deep
+                    else treeData[relation.treeName]--
+                    if(treeData[relation.treeName]<=0)
+                    {
+                        continue;
+                    }
+                }
+                let subInclude= this.getInclude(relation.table2,all,relation.ignore,treeData)
+                
+                if(relation.treeName)
+                {
+                    delete treeData[relation.treeName]
+                }
                 if(subInclude.length)
                 {
                     include.push({
@@ -660,16 +676,25 @@ export default class SequelizeService
                         table2=oprop.foreignKey.table;
                     }
                     let ignore =[]
+                    
                     if(typeof(oprop.foreignKey)!='string')ignore=(oprop.foreignKey as ForeignKeyModel).ignore
-                        this.relations.push(new RelationModel({
-                            table1:table,
-                            table2,
-                            init:false,
-                            key,
-                            title:oprop.name,
-                            model,
-                            ignore
-                        }))
+                    let rel=new RelationModel({
+                        table1:table,
+                        table2,
+                        init:false,
+                        key,
+                        title:oprop.name,
+                        model,
+                        ignore,
+                         
+                    })
+                    if(typeof(oprop.foreignKey)!='string')
+                    {
+                         let fk=(oprop.foreignKey as ForeignKeyModel);
+                         if(fk.deep)rel.deep=fk.deep
+                         if(fk.treeName)rel.treeName=fk.treeName
+                    }
+                        this.relations.push(rel)
                     // modelStructure[prop.name]={
                     //     type: DataTypes.INTEGER,
                     //     references:{
@@ -747,15 +772,27 @@ export default class SequelizeService
                     }
                     let ignore =[]
                     if(typeof(oprop.foreignKey)!='string')ignore=(oprop.foreignKey as ForeignKeyModel).ignore
-                    this.relations.push(new RelationModel({
+
+                    
+                    let rel=new RelationModel({
                         table1:table,
                         table2,
                         init:false,
                         key,
                         title:oprop.name,
                         model,
-                        ignore
-                    })) 
+                        ignore,
+                         
+                    })
+                    if(typeof(oprop.foreignKey)!='string')
+                    {
+                         let fk=(oprop.foreignKey as ForeignKeyModel);
+                         if(fk.deep)rel.deep=fk.deep
+                         if(fk.treeName)rel.treeName=fk.treeName
+                    }
+                        this.relations.push(rel)
+
+ 
                 }
                 else
                 {

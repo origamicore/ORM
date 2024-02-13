@@ -26,6 +26,16 @@ export default class ProfileModel extends IOriModel
     // @OriProps({})
     // countryId:number; 
  
+    @OrmProps({foreignKey:new ForeignKeyModel({
+        table:'profile',
+        col:'representativeId',
+        treeName:'representativeId',
+        deep:2
+    })})
+    representative:ProfileModel;
+
+
+
     @OrmProps({foreignKey:'countryId'})
     country:CountryModel;
 
@@ -49,6 +59,7 @@ export default class ProfileModel extends IOriModel
             country?:CountryModel;
             phones?:PhoneNumber[]
             address?:AddressModel;
+            representative?:ProfileModel
         })
     {
         super();  
