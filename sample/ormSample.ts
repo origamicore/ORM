@@ -1,5 +1,5 @@
 import { OrmConfig, OrmConnection, OrmRouter } from "..";
-import OrigamiCore, { ConfigModel } from "@origamicore/core"; 
+import OrigamiCore, { ConfigModel, SortModel } from "@origamicore/core"; 
 import ProfileModel from "./models/profileModel";
 import DbSchema from "./services/dbSchema";
 import CountryModel from "./models/CountryModel";
@@ -57,9 +57,9 @@ export default class Sample
                 }),
             ]
         )
-        console.log(await DbSchema.profile.findAll({where:{age:{$gte:14}}}))
+        console.log(await DbSchema.profile.findAll({sort:[new SortModel({name:'age',type:'desc'}),new SortModel({name:'firstName',type:'asc'})] }))
 
-        return
+        // return
         let trx=OrmRouter.transaction('test')
         trx.add(
             DbSchema.countrie.InsertManyTrx([

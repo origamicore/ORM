@@ -212,6 +212,14 @@ export default class SequelizeService
             let rows:any[];
             let count:number;
             let find:any={} 
+            if(option?.orders?.length)
+            {
+                find.order=[]
+                for(let order of option.orders)
+                {
+                    find.order.push([order.name,order.type.toUpperCase()])
+                }
+            }
             if(option?.where) find.where=option.where
             if(option?.top) find.limit=option.top
             if(option?.skip) find.offset=option.skip
