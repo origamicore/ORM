@@ -2,6 +2,8 @@ import { MessageModel, OdataModel, OdataResponse, Router, SelectModel, SortModel
 import MergeService from "./MergeService";
 import LocalSearchModel from "../models/orm/localSearchModel";
 import OrmContainer, { OrmClass } from "../models/orm/OrmContainer";
+import TransactionModel, { TransactionType } from "../models/orm/TransactionModel";
+import TransactionService from "./Transaction";
 export default class OrmRouter<T>
 {
     context:string;
@@ -286,4 +288,110 @@ export default class OrmRouter<T>
         return data.response.data; 
     }
 
+    
+     DeleteOneTrx(condition:any):any
+    {   
+        return new TransactionModel({
+            type:TransactionType.Delete,
+            condition:MergeService.mergeWhere(condition,null), 
+            table:this.table,  
+            context:this.context
+        })
+    }
+    DeleteManyTrx(condition:any):any
+    {   
+        return new TransactionModel({
+            type:TransactionType.DeleteMany,
+            condition:MergeService.mergeWhere(condition,null), 
+            table:this.table,  
+            context:this.context
+        })
+    }
+    UpdateOneTrx(condition:any,
+        fields?: {
+            set?:any,
+            inc?:any,
+            push?:any
+        }
+        ):any
+    {  
+        return new TransactionModel({
+            type:TransactionType.Update,
+            table:this.table, 
+            document:{
+                set:fields?.set?this.copy(fields.set):null,
+                inc:fields?.inc,
+                push:fields?.push
+            }, 
+            context:this.context,
+            condition:MergeService.mergeWhere(condition,null),
+        }) 
+    }
+    
+    UpdateManyTrx(condition:any,
+        fields?: {
+            set?:any,
+            inc?:any, 
+        }
+        ): any 
+    { 
+        
+        return new TransactionModel({
+            type:TransactionType.UpdateMany,
+            table:this.table, 
+            document:{
+                set:fields?.set?this.copy(fields.set):null,
+                inc:fields?.inc 
+            }, 
+            context:this.context,
+            condition:MergeService.mergeWhere(condition,null),
+        }) 
+    }
+    InsertOneTrx(document:T): TransactionModel 
+    { 
+        var copy= this.copy(document); 
+        return new TransactionModel({
+            type:TransactionType.Insert,
+            table:this.table, 
+            document:copy, 
+            context:this.context
+        })
+    }
+    
+    InsertManyTrx(documents:T[]):TransactionModel
+    { 
+        var copy= this.copy(documents); 
+        return new TransactionModel({
+            type:TransactionType.InsertMany,
+            table:this.table, 
+            document:copy, 
+            context:this.context
+        })
+    }
+    saveByIdTrx(document:T):TransactionModel
+    {
+        let idField= this.getId( )
+        let condition:any={};
+        let id=document[idField]
+        if(id)
+        {
+            condition[idField] = id
+        }
+        else
+        { 
+            condition[idField] = {$eq:id}
+        }
+        var copy=this.copy(document); 
+        return new TransactionModel({
+            type:TransactionType.Save,
+            table:this.table, 
+            document:copy,
+            condition, 
+            context:this.context
+        })
+    }
+    static transaction(name:string)
+    {
+        return new TransactionService(name)
+    }
 }

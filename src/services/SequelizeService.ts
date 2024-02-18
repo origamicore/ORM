@@ -8,6 +8,7 @@ import LocalSearchModel from "../models/orm/localSearchModel";
 import RelationModel from "../models/orm/RelationModel";
 import ActionModel, { ActionType } from "../models/orm/ActionModel";
 import ForeignKeyModel from "../models/orm/ForeignKeyModel";
+import TransactionModel, { TransactionType } from "../models/orm/TransactionModel";
 const { Sequelize } = require('sequelize');
 class CountryModel 
 { 
@@ -544,6 +545,242 @@ export default class SequelizeService
         return null
         //const users = await testmodel.findAll();
  
+    }
+
+    async createDeleteTrx(table:string,condition:any,isMany:boolean):Promise<ActionModel[]>
+    {
+        let tb= this.tables.get(table)
+        
+        if(tb)
+        {
+            if(!isMany)
+            {
+                let obj=await tb.findOne({where:condition})
+                return [new ActionModel({action: ActionType.DeleteOne,model:tb,data:obj})]
+    
+            }
+            return [new ActionModel({action: ActionType.DeleteMany ,model:tb,condition})]
+
+        }
+    }
+    async createSaveByIdTrx(table:string,data:any,condition:any):Promise<ActionModel[]>
+    {
+
+        let tb= this.tables.get(table)
+        if(tb)
+        { 
+            let include=this.findInclude(table,true)
+            let obj=await tb.findOne({where:condition,include} )
+            if(!obj)
+            {
+                return [
+                    new  ActionModel({
+                        include,
+                        action:ActionType.Create,
+                        model:tb,
+                        data
+                    })
+                ] 
+            }
+            else
+            { 
+                let list =await this.createUpdate(data, obj ,table) 
+                return list; 
+            }
+            
+        }
+        return null
+    }
+    async createUpdateManyTrx(table:string,condition:any,set?:any,inc?:any):Promise<ActionModel[]>
+    {
+        let tb= this.tables.get(table)
+        if(tb)
+        {
+            let actions:ActionModel[]=[]
+            if(inc || set)
+            { 
+                try{
+    
+                    if(inc)
+                        actions.push(new ActionModel({action:ActionType.UpdateManyInc,model:tb,data:inc,condition})) 
+                    if(set)
+                        actions.push(new ActionModel({action:ActionType.UpdateManySet,model:tb,data:set,condition}))   
+    
+                }catch(exp){ 
+                } 
+            }
+            return actions
+        }
+
+    }
+    async createUpdateTrx(table:string,condition:any,set?:any,inc?:any,push?:any):Promise<ActionModel[]>
+    {
+        let tb= this.tables.get(table)
+        if(tb)
+        {
+            let obj=await tb.findOne({where:condition})
+            if(!obj)
+            {
+                throw 'Item not found'
+            }
+            let actions:ActionModel[]=[]
+            if(set )
+            {
+                Object.assign(obj,set)
+                actions.push(new ActionModel({action:ActionType.Update,model:obj}))
+            }
+            if(inc)
+            {
+                actions.push(new ActionModel({action:ActionType.Inc,model:obj,data:inc})) 
+            }
+            if(push)
+            {
+                let id= this.getId(table)
+                let model=this.tablesClass.get(table);
+                for(let filed in push)
+                {
+                    let prop= model.props.filter(p=>p.name==filed)[0];
+                    if(prop.children && prop.classType == 'Array' )
+                    {
+                        let tb= this.tables.get(prop.children.table)
+                        let include=this.findInclude(table)
+                        let arr=push[filed];
+                        for(let row of arr)
+                        {
+                            row[prop.children.col]=obj[id]
+                            actions.push(new ActionModel({action:ActionType.Create,model:tb,data:row,include})) 
+
+                        }
+                    }
+                }
+            }
+            return actions
+        }
+        return null
+    }
+    createInsertTrx(document:any,table:string):ActionModel[]
+    {
+        let tb= this.tables.get(table)        
+        if(tb)
+        {
+            let include=this.findInclude(table)
+            return [
+                new  ActionModel({
+                    include,
+                    action:ActionType.Create,
+                    model:tb,
+                    data:document
+                })
+            ]
+
+        }
+        throw 'Table not found'
+    }
+    createInsertManyTrx(documents:any,table:string):ActionModel[]
+    {
+        let arr:ActionModel[]=[]
+        let tb= this.tables.get(table)        
+        if(tb)
+        {
+            let include=this.findInclude(table)
+            for(let document of documents)
+                arr.push(
+                    new  ActionModel({
+                        include,
+                        action:ActionType.Create,
+                        model:tb,
+                        data:document
+                    })
+                )
+            
+           return arr;         
+        }
+        throw 'Table not found'
+    }
+
+    async runTransacton(documents:TransactionModel[])
+    {
+        let actions:ActionModel[]=[];
+        for(let doc of documents)
+        {
+            if(doc.type==TransactionType.Insert)
+            {
+                actions.push(...this.createInsertTrx(doc.document,doc.table))
+            }
+            if(doc.type==TransactionType.InsertMany)
+            {
+                actions.push(...this.createInsertManyTrx(doc.document,doc.table))
+            }
+            if(doc.type==TransactionType.Save)
+            {
+                actions.push(...await this.createSaveByIdTrx(doc.table,doc.document,doc.condition))
+            }
+            if(doc.type==TransactionType.Update)
+            {
+                actions.push(...await this.createUpdateTrx(doc.table,doc.condition,doc.document.set,doc.document.inc,doc.document.push))
+            }
+            if(doc.type==TransactionType.UpdateMany)
+            {
+                actions.push(...await this.createUpdateManyTrx(doc.table,doc.condition,doc.document.set,doc.document.inc))
+            }
+            if(doc.type==TransactionType.Delete)
+            {
+                actions.push(...await this.createDeleteTrx(doc.table,doc.condition, false))
+            }
+            if(doc.type==TransactionType.DeleteMany)
+            {
+                actions.push(...await this.createDeleteTrx(doc.table,doc.condition, true))
+            }
+            
+        }
+
+        let transaction = await this.sequelize.transaction(); 
+        try{
+            let promiseArr=[] ;
+             for(let action of actions)
+             {
+                
+                if(action.action==ActionType.Create)
+                {
+                    promiseArr.push(action.model.create(action.data,{include:action.include,transaction}) ) 
+                }
+                if(action.action==ActionType.Inc)
+                {
+                    promiseArr.push(action.model.increment(action.data,{transaction}))  
+                }
+                if(action.action==ActionType.Update)
+                {
+                    promiseArr.push(action.model.save({transaction}) ) 
+                }
+                if(action.action==ActionType.Delete)
+                {
+                    promiseArr.push(action.model.destroy({transaction}))  
+                } 
+                if(action.action==ActionType.DeleteMany)
+                { 
+                    promiseArr.push(action.model.destroy({where:action.condition}))  
+                } 
+                if(action.action==ActionType.DeleteOne)
+                { 
+                    promiseArr.push(action.data.destroy())  
+                } 
+                if(action.action==ActionType.UpdateManyInc)
+                { 
+                    promiseArr.push(action.model.increment(action.data,{transaction,where:action.condition}) ) 
+                } 
+                if(action.action==ActionType.UpdateManySet)
+                { 
+                    promiseArr.push(action.model.update(action.data,{transaction,where:action.condition}) ) 
+                } 
+
+             }
+            await Promise.all(promiseArr)
+            await transaction.commit();
+
+        }catch(exp){
+            await transaction.rollback();
+        } 
+
     }
     async insertMany(table:string,data:any):Promise<any>
     {  

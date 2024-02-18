@@ -3,7 +3,11 @@ export enum ActionType
     Delete=1,
     Create=2,
     Update=3,
-    Inc=4
+    Inc=4,
+    UpdateManySet=5,
+    UpdateManyInc=6, 
+    DeleteMany=7,
+    DeleteOne=8,
 }
 export default class ActionModel
 {
@@ -11,11 +15,13 @@ export default class ActionModel
     action:ActionType
     data:any
     include:any
+    condition:any
     constructor(data:{
         model:any;
         action:ActionType
         data?:any
         include?:any
+        condition?:any
     })
     {
         Object.assign(this,data)

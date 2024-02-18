@@ -14,9 +14,65 @@ export default class Sample
 {
     constructor()
     {
-        this.init()
+        this.transaction()
+        // this.init()
     }
-    
+    async transaction()
+    {
+        
+        var context='default';
+        var config=new ConfigModel({
+            packageConfig:[
+                  new OrmConfig({ 
+                      connections:[
+                        OrmConnection.createMemorySqlite(context) 
+                      ]
+                  })
+            ]
+        });
+        
+        var origamicore = new OrigamiCore(config);
+        await origamicore.start( )   
+        await DbSchema.init(context);
+        
+        await DbSchema.countrie.InsertMany([
+            new CountryModel({_id:1,name:"Iran"}),
+            new CountryModel({_id:2,name:"Iraq"}),
+            new CountryModel({_id:3,name:"India"}),
+        ]) 
+
+        await DbSchema.profile.InsertMany(
+            [
+                new ProfileModel({
+                    _id:"3",
+                    age:13,
+                    firstName:"vahid3",
+                    lastName:'hossaini3'
+                }),
+                new ProfileModel({
+                    _id:"4",
+                    age:14,
+                    firstName:"vahid4",
+                    lastName:'hossaini4'
+                }),
+            ]
+        )
+        console.log(await DbSchema.profile.findAll({where:{age:{$gte:14}}}))
+
+        return
+        let trx=OrmRouter.transaction('test')
+        trx.add(
+            DbSchema.countrie.InsertManyTrx([
+                new CountryModel({_id:1,name:"Iran"}),
+                new CountryModel({_id:2,name:"Iraq"}),
+                new CountryModel({_id:3,name:"India"}),
+            ])
+        )
+        trx.add(DbSchema.countrie.DeleteOneTrx({_id:1}))
+        let resp=await trx.run()
+        console.log(resp)
+        console.log(await DbSchema.countrie.findAll())
+    }
     async init()
     {
         var context='default';
@@ -134,6 +190,8 @@ export default class Sample
         res= await DbSchema.countrie.findAll({ })
         log(res); 
         let a=0;
+
+        OrmRouter.transaction('trx').add(DbSchema.profile.saveByIdTrx(profile))
     //     res= await DbSchema.profile.findById('3')
     //     console.log('>>>>>findById',res);
     //    res= await DbSchema.profile.findById('')

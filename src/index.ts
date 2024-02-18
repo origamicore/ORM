@@ -146,4 +146,16 @@ export default class TsOriORM implements PackageIndex
             return OrmErrors.unknownError(exp);
         }
     }
+    @OriService({isInternal:true})
+    async transaction(context:string,documents:any):Promise<RouteResponse>
+    {
+        var connection=this.connections.get(context);
+        if(connection==null) return OrmErrors.connectionNotFound; 
+        try{
+            var data= await connection.runTransacton(documents); 
+            return new RouteResponse({response:new ResponseDataModel({data:data})});
+        }catch(exp){
+            return OrmErrors.unknownError(exp);
+        }
+    }
 }
