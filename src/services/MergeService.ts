@@ -210,6 +210,26 @@ export default class MergeService
                         obj[a][Op.eq]=obj[a].$eq
                         delete obj[a].$eq
                     } 
+                    if(keys.indexOf('$gte')>-1)
+                    {
+                        obj[a][Op.gte]=obj[a].$gte
+                        delete obj[a].$gte
+                    } 
+                    if(keys.indexOf('$gt')>-1)
+                    {
+                        obj[a][Op.gt]=obj[a].$gt
+                        delete obj[a].$gt
+                    } 
+                    if(keys.indexOf('$lt')>-1)
+                    {
+                        obj[a][Op.lt]=obj[a].$lt
+                        delete obj[a].$lt
+                    } 
+                    if(keys.indexOf('$lte')>-1)
+                    {
+                        obj[a][Op.lte]=obj[a].$lte
+                        delete obj[a].$lte
+                    } 
                 }
             }
 
