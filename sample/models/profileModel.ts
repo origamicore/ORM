@@ -42,6 +42,7 @@ export default class ProfileModel extends IOriModel
     @OrmProps({children:new ChildModel({
         col:'profileId',
         table:'phoneNumbers', 
+        syncDelete:true
     })})
     phones:PhoneNumber[];
 

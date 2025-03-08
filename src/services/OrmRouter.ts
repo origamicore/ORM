@@ -139,7 +139,7 @@ export default class OrmRouter<T>
 
     ):Promise<OdataResponse<T>>
     {  
-        let mselect=MergeService.mergeSelect(fields?.select,odata?.$filter)
+        let mselect=MergeService.mergeSelect(fields?.select,odata?.$select) 
         var data= await Router.runInternal('orm','findAll',new MessageModel({data:{
             context:this.context,
             table:this.table,
@@ -161,7 +161,7 @@ export default class OrmRouter<T>
             {
                 list.push(new this.cls(row))
             }
-            return new OdataResponse(this.cls,{value:list})
+            return new OdataResponse(this.cls,{value:list,count:rsep.count})
         }
         throw data.error.message; 
     }

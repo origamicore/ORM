@@ -56,7 +56,7 @@ export default class SequelizeService
         else
         {
             let dialect:string;
-            if(config.type==OrmConnectionType.BariaDB)dialect='mariadb';
+            if(config.type==OrmConnectionType.MariaDB)dialect='mariadb';
             if(config.type==OrmConnectionType.MySql)dialect='mysql';
             if(config.type==OrmConnectionType.Oracle)dialect='oracle';
             if(config.type==OrmConnectionType.Postgres)dialect='postgres';
@@ -1102,11 +1102,23 @@ export default class SequelizeService
                         let exist=ormModel.props.filter(p=>p.children?.table==relation.table2)[0];
                         if(exist.classType=='Array')
                         {
-                            relation.relation1 = table1.hasMany(table2,{
-                               as:relation.title,
-                                foreignKey:relation.key, 
-    
-                            })
+                            if(exist.children?.syncDelete)
+                            {
+                                relation.relation1 = table1.hasMany(table2,{
+                                    as:relation.title,
+                                    foreignKey:relation.key, 
+                                    onDelete: "CASCADE"
+                                });
+                            }
+                            else
+                            {
+                                relation.relation1 = table1.hasMany(table2,{
+                                    as:relation.title,
+                                    foreignKey:relation.key, 
+        
+                                });
+
+                            }
                         }
                         else
                         {

@@ -1,5 +1,5 @@
 import { OrmConfig, OrmConnection, OrmRouter } from "..";
-import OrigamiCore, { ConfigModel, SortModel } from "@origamicore/core"; 
+import OrigamiCore, { ConfigModel, OdataModel, SortModel } from "@origamicore/core"; 
 import ProfileModel from "./models/profileModel";
 import DbSchema from "./services/dbSchema";
 import CountryModel from "./models/CountryModel";
@@ -14,8 +14,8 @@ export default class Sample
 {
     constructor()
     {
-        this.transaction()
-        // this.init()
+       // this.transaction()
+         this.init()
     }
     async transaction()
     {
@@ -95,6 +95,7 @@ export default class Sample
             new CountryModel({_id:3,name:"India"}),
         ])
         let res={}
+        res=await DbSchema.countrie.findAll({},new OdataModel({$filter:'name eq \'\'',$count:true}));
         let profile=new ProfileModel({
             _id:"1",
             age:11,
@@ -166,7 +167,7 @@ export default class Sample
         profile= await DbSchema.profile.findById('2')
         profile= await DbSchema.profile.findById('3')
         profile.age=123
-        profile.phones[0].type='Work'
+      //  profile.phones[0].type='Work'
         profile.phones.push(new PhoneNumber({phone:'+01',type:'None'})) 
         profile.phones.splice(0,1)
         //delete profile['@address'] ;

@@ -292,7 +292,7 @@ export default class MergeService
         }
         if(odataFilter)
         {
-            let filter = parser.createOdataFilter(odataFilter)
+            filter = this.createOdataFilter(odataFilter)
             if(where)
             {
                 filter={[Op.and]:[
