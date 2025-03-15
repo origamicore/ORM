@@ -1,6 +1,6 @@
 {
   "name": "@origamicore/orm",
-  "version": "1.0.22",
+  "version": "1.0.23",
   "description": "OrigamiCore ORM",
   "main": "dist/index.js",
   "scripts": {

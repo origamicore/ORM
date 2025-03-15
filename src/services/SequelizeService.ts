@@ -9,6 +9,7 @@ import RelationModel from "../models/orm/RelationModel";
 import ActionModel, { ActionType } from "../models/orm/ActionModel";
 import ForeignKeyModel from "../models/orm/ForeignKeyModel";
 import TransactionModel, { TransactionType } from "../models/orm/TransactionModel";
+import IncludeModel from "../models/orm/IncludeModel";
 const { Sequelize } = require('sequelize');
 class CountryModel 
 { 
@@ -106,7 +107,7 @@ export default class SequelizeService
             }    
         return temp;
     }
-    findInclude(table:string,search:boolean=false,select:string[]=[])
+    findInclude(table:string,search:boolean=false,select:string[]=[],userInclude:IncludeModel[]=[])
     { 
         if(search)
         {
@@ -114,10 +115,28 @@ export default class SequelizeService
             
             if(!include)
             {
-                let sub=this.getInclude(table,true,[],{})
-                this.includesForSearch.set(table,sub) 
+                let sub=this.getInclude(table,true,[],{}) as any[];
+                this.includesForSearch.set(table,sub)
                 include = this.includesForSearch.get(table) 
             }
+            if(userInclude?.length)
+            {
+                let newsub=[];
+                for(let inc of include)
+                {
+                    let name=inc.as??inc?.association?.as
+                    if(name)
+                    {
+                        let index=userInclude.filter(p=>p.model==name)[0];
+                        if(index)
+                        {
+                            newsub.push(inc);
+                        }
+                    } 
+                } 
+                include=newsub
+            } 
+
             if(select.length)
             {
                 let a=0;
@@ -249,7 +268,7 @@ export default class SequelizeService
             }
             if(!find.attributes.length)delete find.attributes 
             
-            let include=this.findInclude(table,true,option.select)
+            let include=this.findInclude(table,true,option.select,option?.include)
             if(include.length)
             {
                 find.include=include

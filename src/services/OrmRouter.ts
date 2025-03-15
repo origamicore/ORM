@@ -4,6 +4,7 @@ import LocalSearchModel from "../models/orm/localSearchModel";
 import OrmContainer, { OrmClass } from "../models/orm/OrmContainer";
 import TransactionModel, { TransactionType } from "../models/orm/TransactionModel";
 import TransactionService from "./Transaction";
+import IncludeModel from "../models/orm/IncludeModel";
 export default class OrmRouter<T>
 {
     context:string;
@@ -135,6 +136,7 @@ export default class OrmRouter<T>
             limit?:number
             skip?:number
             showCount?:boolean
+            include?:IncludeModel[]
         },odata?:OdataModel
 
     ):Promise<OdataResponse<T>>
@@ -151,6 +153,7 @@ export default class OrmRouter<T>
                 skip:MergeService.mergeTop(fields?.skip,odata?.$skip),
                 orders:MergeService.mergeOrder(fields?.sort,odata?.$orderby),
                 count: (fields?.showCount || !!odata?.$count), 
+                include:fields.include
             })  
         }}))
         if(data.response)

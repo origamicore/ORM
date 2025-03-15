@@ -5,6 +5,7 @@ import DbSchema from "./services/dbSchema";
 import CountryModel from "./models/CountryModel";
 import PhoneNumber from "./models/PhoneNumber";
 import AddressModel from "./models/AddressModel";
+import IncludeModel from "../src/models/orm/IncludeModel";
 
 function log(data:any)
 {
@@ -149,6 +150,11 @@ export default class Sample
         }})
         res= await DbSchema.phoneNumbers.findAll({})
         res= await DbSchema.profile.findAll({where:{_id:{$eq:'1'}}})
+        res= await DbSchema.profile.findAll({where:{_id:{$eq:'1'}},include:[
+            new IncludeModel({
+                model:'country'
+            })
+        ]})
         await DbSchema.profile.UpdateOne({_id:'1'},{
             inc:{age:22},
             set:{firstName:'test update'},
