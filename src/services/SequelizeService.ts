@@ -276,9 +276,16 @@ export default class SequelizeService
             }
             if(option?.count)
             {
-                let dt=await tb.findAndCountAll(find)
-                count=dt.count;
-                rows = dt.rows;
+                
+                count=await tb.count({
+                    include:find.include,
+                    where:find.where,
+                    distinct: true,
+                    col:tb.primaryKeyField
+                })
+                // let dt=await tb.findAll(find)
+                // //count=dt.count;
+                rows = await tb.findAll(find);
             }
             else
             { 

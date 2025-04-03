@@ -138,7 +138,7 @@ export default class Sample
             ]
         )
        // res= await DbSchema.profile.saveById(profile)
-        res= await DbSchema.profile.findAll({ where:{_id:'2'}})
+        res= await DbSchema.profile.findAll({ where:{_id:'2'},showCount:true})
         res= await DbSchema.profile.findAll({select:['_id','firstName','lastName','country'],where:{_id:'1'}})
         res= await DbSchema.profile.findAll({where:{
             $or:[
